@@ -1,5 +1,4 @@
 import cv2
-import pafy
 from ultrafastLaneDetector import UltrafastLaneDetector, ModelType
 
 model_path = "models/model_float32.tflite"
@@ -7,11 +6,6 @@ model_type = ModelType.TUSIMPLE
 
 # Initialize video
 # cap = cv2.VideoCapture("video.mp4")
-
-videoUrl = 'https://youtu.be/2CIxM7x-Clc'
-videoPafy = pafy.new(videoUrl)
-print(videoPafy.streams)
-cap = cv2.VideoCapture(videoPafy.streams[-1].url)
 
 # Initialize lane detection model
 lane_detector = UltrafastLaneDetector(model_path, model_type)
