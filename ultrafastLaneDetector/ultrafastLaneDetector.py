@@ -1,3 +1,30 @@
+"""
+---------------HOW THIS WORKS---------------
+"class ModelConfig" has init parameters for models, ie. Culane and Tusimple
+"class UltrafastLaneDetector" init func makes variables for tracking fps, time, etc. and calls "initialize_model()"
+"initialize_model()" creates TFLite interpretor + gets model input & output deteails
+^^^^^^
+All that happens when the class gets initialized (in this case, in videoLaneDetection.py)
+
+
+All this happens when "detect_lanes()" is called from instance of UltraFastLaneDetector
+˅˅˅˅˅˅
+"def detect_lanes()" gets frame and prepares it by sending it to prepare_input()
+	"prepare_input()"  converts RGB2BGR, gets height, width, channels of image, and scales/normalized the pixel values
+"input_tensor" from "prepare_input()" gets passed to "inference()"
+	"inference()" sets tensor depending on modeltype, performs infeerence, gets output of inference model, and reshapes output to 3D array (anchors, lanes, points)
+
+
+
+"""
+
+
+
+
+
+
+
+
 import time
 import cv2
 import scipy.special
@@ -71,6 +98,7 @@ class UltrafastLaneDetector():
 
 	def initialize_model(self, model_path):
 
+		# creates interpreter that uses TFLite model
 		self.interpreter = Interpreter(model_path=model_path)
 		self.interpreter.allocate_tensors()
 
@@ -216,7 +244,7 @@ class UltrafastLaneDetector():
 
 						# minimum and maximum end point (ie. topmost and bottommost)
 						point1 = lane_points[0]
-						point2 = lane_points[(len(lane_points) - 1)]
+						point2 = lane_points[(len(lane_points) - 1)]	# -1 because len is 1...n, not 0...n
 						cv2.line(img=visualization_img, pt1=point1, pt2=point2, color=lane_colors[lane_num], thickness=3)
 
 					# lane_points = np.array(lane_points)
