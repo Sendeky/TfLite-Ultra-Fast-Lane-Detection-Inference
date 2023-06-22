@@ -4,13 +4,16 @@ import scipy.special
 from enum import Enum
 import numpy as np
 
+#Checks if tflite runtime is installed
 try:
     from tflite_runtime.interpreter import Interpreter
 except:
     from tensorflow.lite.python.interpreter import Interpreter
 
+# Colors for lanes/dots on visualization
 lane_colors = [(0,0,255),(0,255,0),(255,0,0),(0,255,255)]
 
+# Row anchors for the two models
 tusimple_row_anchor = [ 64,  68,  72,  76,  80,  84,  88,  92,  96, 100, 104, 108, 112,
 			116, 120, 124, 128, 132, 136, 140, 144, 148, 152, 156, 160, 164,
 			168, 172, 176, 180, 184, 188, 192, 196, 200, 204, 208, 212, 216,
@@ -22,15 +25,19 @@ class ModelType(Enum):
 	TUSIMPLE = 0
 	CULANE = 1
 
+# Model configuration
 class ModelConfig():
 
 	def __init__(self, model_type):
 
+		# Different configs depending on model
 		if model_type == ModelType.TUSIMPLE:
 			self.init_tusimple_config()
 		else:
 			self.init_culane_config()
 
+	# Tusimple model configuration
+	# 1280 x 720 image, 100 griding number, 56 cls_num_per_lane
 	def init_tusimple_config(self):
 		self.img_w = 1280
 		self.img_h = 720
@@ -38,6 +45,8 @@ class ModelConfig():
 		self.griding_num = 100
 		self.cls_num_per_lane = 56
 
+	# Culane model configuration
+	# 1640 x 590 image, 200 griding number, 18 cls_num_per_lane
 	def init_culane_config(self):
 		self.img_w = 1640
 		self.img_h = 590
@@ -48,7 +57,8 @@ class ModelConfig():
 class UltrafastLaneDetector():
 
 	def __init__(self, model_path, model_type=ModelType.TUSIMPLE):
-
+		
+		# Variables for tracking fps, time, and frame count
 		self.fps = 0
 		self.timeLastPrediction = time.time()
 		self.frameCounter = 0
@@ -84,7 +94,7 @@ class UltrafastLaneDetector():
 		return visualization_img
 
 	def prepare_input(self, image):
-		img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+		img = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 		self.img_height, self.img_width, self.img_channels = img.shape
 
 		# Input values should be from -1 to 1 with a size of 288 x 800 pixels
@@ -95,7 +105,7 @@ class UltrafastLaneDetector():
 		std=[0.229, 0.224, 0.225]
 
 		img_input = ((img_input/ 255.0 - mean) / std).astype(np.float32)
-		img_input = img_input[np.newaxis,:,:,:]      
+		img_input = img_input[np.newaxis,:,:,:]
 
 		return img_input
 
@@ -114,12 +124,14 @@ class UltrafastLaneDetector():
 		self.num_points = output_shape[3]
 
 	def inference(self, input_tensor):
+		# Different models have different input and output tensor parameters
+		# In this case Culane and Tusimple have slighly varying parameters. More info in this paper: https://arxiv.org/abs/2004.11757
 		# Peform inference
-		self.interpreter.set_tensor(self.input_details[0]['index'], input_tensor)
+		self.interpreter.set_tensor(self.input_details[0]['index'], input_tensor)		# sets tensor depending on model and input tensor (prepared image)
 		self.interpreter.invoke()
-		output = self.interpreter.get_tensor(self.output_details[0]['index'])
+		output = self.interpreter.get_tensor(self.output_details[0]['index'])			# gets tensor from model
 
-		output = output.reshape(self.num_anchors, self.num_lanes, self.num_points)
+		output = output.reshape(self.num_anchors, self.num_lanes, self.num_points)		# reshapes output tensor to 3D array (anchors, lanes, points)
 		return output
 
 
@@ -129,19 +141,19 @@ class UltrafastLaneDetector():
 		# Parse the output of the model to get the lane information
 		processed_output = output[:, ::-1, :]
 
-		prob = scipy.special.softmax(processed_output[:-1, :, :], axis=0)
-		idx = np.arange(cfg.griding_num) + 1
-		idx = idx.reshape(-1, 1, 1)
-		loc = np.sum(prob * idx, axis=0)
-		processed_output = np.argmax(processed_output, axis=0)
-		loc[processed_output == cfg.griding_num] = 0
-		processed_output = loc
+		prob = scipy.special.softmax(processed_output[:-1, :, :], axis=0)		# applies softmax fucntion to outpu tensor (normalizes it)
+		idx = np.arange(cfg.griding_num) + 1									# creates array of numbers from 1 to 100/200 (depending on model, tusimple/culane)
+		idx = idx.reshape(-1, 1, 1)												# reshapes array to 3D array (100,200, 1, 1) (tusimple/culane)
+		loc = np.sum(prob * idx, axis=0)										# multiplies prob and idx arrays and sums them up; gets location of lane points
+		processed_output = np.argmax(processed_output, axis=0)					# gets index of maximum value in output tensor 
+		loc[processed_output == cfg.griding_num] = 0							# sets location of lane points to 0 if index of maximum value in output tensor is 100/200 (tusimple/culane)
+		processed_output = loc													# sets processed output to location of lane points
 
 		col_sample = np.linspace(0, 800 - 1, cfg.griding_num)
 		col_sample_w = col_sample[1] - col_sample[0]
 
-		lane_points_mat = []
-		lanes_detected = []
+		lane_points_mat = []				# matrix of lane points
+		lanes_detected = []					# list of lanes detected (rightmost, right, left, leftmost)
 
 		max_lanes = processed_output.shape[1]
 		for lane_num in range(max_lanes):
@@ -160,6 +172,8 @@ class UltrafastLaneDetector():
 				lanes_detected.append(False)
 
 			lane_points_mat.append(lane_points)
+			print("Lane points mat: ", lane_points_mat)
+			print("Lane points mat type: ", type(lane_points_mat))
 		return np.array(lane_points_mat), np.array(lanes_detected)
 
 	@staticmethod

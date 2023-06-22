@@ -1,3 +1,9 @@
+#Test video
+test.mp4
+
+#MacOS
+.DS_Store
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
