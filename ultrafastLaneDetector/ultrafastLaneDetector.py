@@ -186,14 +186,41 @@ class UltrafastLaneDetector():
 			
 			lane_segment_img = visualization_img.copy()
 			
-			cv2.fillPoly(lane_segment_img, pts = [np.vstack((lane_points_mat[1],np.flipud(lane_points_mat[2])))], color =(255,191,0))
+			cv2.fillPoly(lane_segment_img, pts = [np.vstack((lane_points_mat[1],np.flipud(lane_points_mat[2])))], color =(255,128,0))
 			visualization_img = cv2.addWeighted(visualization_img, 0.7, lane_segment_img, 0.3, 0)
 
 		if(draw_points):
 			for lane_num,lane_points in enumerate(lane_points_mat):
 				for lane_point in lane_points:
-					cv2.circle(visualization_img, (lane_point[0],lane_point[1]), 3, lane_colors[lane_num], -1)
 
+					if lane_num == 0 or lane_num == 3:
+						# draw circles for outer lanes
+						cv2.circle(visualization_img, (lane_point[0],lane_point[1]), 3, lane_colors[lane_num], -1)
+					
+					if lane_num == 1 or lane_num == 2:
+						# draw continous lines for inner lanes
+						print("lane points: ", lane_points)
+						print("lane points len: ", len(lane_points))
+
+						# draw dashed lines for inner lanes
+						# for i in range(0, len(lane_points) - 1, 2):
+							# print("i range: ", i)
+							# print(f"{i} lane_points: ", lane_points[i])
+							# print(f"{i + 1} lane_points: ", lane_points[i + 1])
+							# point1 = lane_points[i]
+							# point2 = lane_points[i + 1]
+							# cv2.line(img=visualization_img, pt1=point1, pt2=point2, color=lane_colors[lane_num], thickness=3)
+						
+						#print(f"min: 0")
+						#print(f"max: {len(lane_points)}")
+
+						# minimum and maximum end point (ie. topmost and bottommost)
+						point1 = lane_points[0]
+						point2 = lane_points[(len(lane_points) - 1)]
+						cv2.line(img=visualization_img, pt1=point1, pt2=point2, color=lane_colors[lane_num], thickness=3)
+
+					# lane_points = np.array(lane_points)
+					# cv2.drawContours(image=visualization_img, contours=[lane_points], contourIdx=-1, color=lane_colors[lane_num], thickness=3)
 		return visualization_img
 
 
