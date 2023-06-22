@@ -11,7 +11,7 @@ except:
     from tensorflow.lite.python.interpreter import Interpreter
 
 # Colors for lanes/dots on visualization
-lane_colors = [(0,0,255),(0,255,0),(255,0,0),(0,255,255)]
+lane_colors = [(0,0,255),(255,0,0),(255,0,0),(0,255,255)]
 
 # Row anchors for the two models
 tusimple_row_anchor = [ 64,  68,  72,  76,  80,  84,  88,  92,  96, 100, 104, 108, 112,
