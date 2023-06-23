@@ -13,9 +13,11 @@ All this happens when "detect_lanes()" is called from instance of UltraFastLaneD
 	"prepare_input()"  converts RGB2BGR, gets height, width, channels of image, and scales/normalized the pixel values
 "input_tensor" from "prepare_input()" gets passed to "inference()"
 	"inference()" sets tensor depending on modeltype, performs infeerence, gets output of inference model, and reshapes output to 3D array (anchors, lanes, points)
-
-
-
+"process_output" takes in output ^^ and returns lane points and lanes detected
+	parses "output" of model, normalizes it, reshapes to 3D array, gets location of lane points
+	checks for points and iterates, appending lane points, returns lane points matrix, lane presence (true/false, out of 4)
+"draw_lanes" then takes image, lane points matrix, lane presence, config, draw_points bool
+	resizes image to model input size, adds mask for inner lanes, draws points and lines if draw_points bool is true
 """
 
 
@@ -116,7 +118,7 @@ class UltrafastLaneDetector():
 		# Process output data
 		self.lanes_points, self.lanes_detected = self.process_output(output, self.cfg)
 
-		# # Draw depth image
+		# Draw depth image
 		visualization_img = self.draw_lanes(image, self.lanes_points, self.lanes_detected, self.cfg, draw_points)
 
 		return visualization_img
@@ -184,6 +186,7 @@ class UltrafastLaneDetector():
 		lanes_detected = []					# list of lanes detected (rightmost, right, left, leftmost)
 
 		max_lanes = processed_output.shape[1]
+		# print("max lanes: ", max_lanes)
 		for lane_num in range(max_lanes):
 			lane_points = []
 			# Check if there are any points detected in the lane
@@ -200,8 +203,8 @@ class UltrafastLaneDetector():
 				lanes_detected.append(False)
 
 			lane_points_mat.append(lane_points)
-			print("Lane points mat: ", lane_points_mat)
-			print("Lane points mat type: ", type(lane_points_mat))
+			# print("Lane points mat: ", lane_points_mat)
+			# print("Lane points mat type: ", type(lane_points_mat))
 		return np.array(lane_points_mat), np.array(lanes_detected)
 
 	@staticmethod
@@ -231,21 +234,22 @@ class UltrafastLaneDetector():
 						print("lane points len: ", len(lane_points))
 
 						# draw dashed lines for inner lanes
-						# for i in range(0, len(lane_points) - 1, 2):
-							# print("i range: ", i)
-							# print(f"{i} lane_points: ", lane_points[i])
-							# print(f"{i + 1} lane_points: ", lane_points[i + 1])
-							# point1 = lane_points[i]
-							# point2 = lane_points[i + 1]
-							# cv2.line(img=visualization_img, pt1=point1, pt2=point2, color=lane_colors[lane_num], thickness=3)
+						for i in range(0, len(lane_points) - 1, 2):
+							print("i range: ", i)
+							print(f"{i} lane_points: ", lane_points[i])
+							print(f"{i + 1} lane_points: ", lane_points[i + 1])
+							point1 = lane_points[i]
+							point2 = lane_points[i + 1]
+							cv2.line(img=visualization_img, pt1=point1, pt2=point2, color=lane_colors[lane_num], thickness=3)
 						
 						#print(f"min: 0")
 						#print(f"max: {len(lane_points)}")
 
+						# draws straight line from bottommost to topmost
 						# minimum and maximum end point (ie. topmost and bottommost)
-						point1 = lane_points[0]
-						point2 = lane_points[(len(lane_points) - 1)]	# -1 because len is 1...n, not 0...n
-						cv2.line(img=visualization_img, pt1=point1, pt2=point2, color=lane_colors[lane_num], thickness=3)
+						# point1 = lane_points[0]
+						# point2 = lane_points[(len(lane_points) - 1)]	# -1 because len is 1...n, not 0...n
+						# cv2.line(img=visualization_img, pt1=point1, pt2=point2, color=lane_colors[lane_num], thickness=3)
 
 					# lane_points = np.array(lane_points)
 					# cv2.drawContours(image=visualization_img, contours=[lane_points], contourIdx=-1, color=lane_colors[lane_num], thickness=3)
