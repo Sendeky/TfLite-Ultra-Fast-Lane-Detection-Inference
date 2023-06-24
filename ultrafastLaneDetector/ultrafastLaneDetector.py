@@ -27,11 +27,16 @@ All this happens when "detect_lanes()" is called from instance of UltraFastLaneD
 
 
 
+
 import time
 import cv2
 import scipy.special
 from enum import Enum
 import numpy as np
+
+#utils
+# from utils import average_points
+from .utils import average_points
 
 #Checks if tflite runtime is installed
 try:
@@ -107,9 +112,8 @@ class UltrafastLaneDetector():
 		# Get model info
 		self.getModel_input_details()
 		self.getModel_output_details()
-
+		
 	def detect_lanes(self, image, draw_points=True):
-
 		input_tensor = self.prepare_input(image)
 
 		# Perform inference on the image
@@ -206,6 +210,8 @@ class UltrafastLaneDetector():
 			# print("Lane points mat: ", lane_points_mat)
 			# print("Lane points mat type: ", type(lane_points_mat))
 		return np.array(lane_points_mat), np.array(lanes_detected)
+	
+
 
 	@staticmethod
 	def draw_lanes(input_img, lane_points_mat, lanes_detected, cfg, draw_points=True):
@@ -238,6 +244,7 @@ class UltrafastLaneDetector():
 							print("i range: ", i)
 							print(f"{i} lane_points: ", lane_points[i])
 							print(f"{i + 1} lane_points: ", lane_points[i + 1])
+							print("avg points: ")
 							point1 = lane_points[i]
 							point2 = lane_points[i + 1]
 							cv2.line(img=visualization_img, pt1=point1, pt2=point2, color=lane_colors[lane_num], thickness=3)
@@ -253,6 +260,36 @@ class UltrafastLaneDetector():
 
 					# lane_points = np.array(lane_points)
 					# cv2.drawContours(image=visualization_img, contours=[lane_points], contourIdx=-1, color=lane_colors[lane_num], thickness=3)
+			# print("lane_points_mat: ", lane_points_mat)
+			converted_lane_points_mat = np.array(lane_points_mat).tolist()
+			print("converted lane_points_mat: ", converted_lane_points_mat)
+
+			# checks for 2 center lanes in lane_points matrix
+			if converted_lane_points_mat[1] and [2]:
+				print("Center lanes exist")
+				print("right lane: ", converted_lane_points_mat[1])
+				print("left lane: ", converted_lane_points_mat[2])
+
+				length = min(len(converted_lane_points_mat[1]), len(converted_lane_points_mat[2]))
+				print("min length lanes: ", length)
+
+				center_points = []
+				# gets center points between left and right
+				for i in range(0, length - 1, 2):
+					center_point = average_points(converted_lane_points_mat[1][i], converted_lane_points_mat[2][i])
+					print(f"center line{i}", center_point)
+					center_x = int(center_point[0])
+					center_y = int(center_point[1])
+					cv2.circle(img=visualization_img, center=(center_x, center_y), radius=3, color=lane_colors[lane_num],thickness=-1)
+					center_points.append([center_x, center_y])
+				
+				print("center points: ", center_points)
+				center_points = np.array(center_points)
+				cv2.drawContours(visualization_img, [center_points], -1, lane_colors[lane_num], 3)
+				# cv2.drawContours(image=visualization_img, contours=[lane_points], contourIdx=-1, color=lane_colors[lane_num], thickness=3)
+
+
+
 		return visualization_img
 
 
