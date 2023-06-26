@@ -19,6 +19,12 @@ cv2.namedWindow("Detected lanes", cv2.WINDOW_NORMAL)
 # user input to continue
 input("Press Enter to continue...")
 
+debug = input("y/n Debug")
+if debug == "y":
+	debug = True
+else: 
+	debug = False
+
 if __name__ == "__main__":
 	while cap.isOpened():
 		try:
@@ -31,7 +37,7 @@ if __name__ == "__main__":
 
 			# Detect the lanes
 			# use debug if you want to see pyplot of smoothed center points
-			output_img = lane_detector.detect_lanes(frame, debug=False)
+			output_img = lane_detector.detect_lanes(frame, debug=debug)
 
 			cv2.imshow("Detected lanes", output_img)
 

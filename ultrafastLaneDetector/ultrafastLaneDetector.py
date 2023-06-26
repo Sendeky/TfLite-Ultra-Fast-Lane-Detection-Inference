@@ -23,7 +23,6 @@ All this happens when "detect_lanes()" is called from instance of UltraFastLaneD
 
 
 
-
 import pandas as pd
 import time
 import cv2
@@ -32,7 +31,7 @@ from enum import Enum
 import numpy as np
 
 #utils
-from .utils import average_points
+import ultrafastLaneDetector.utils as utils
 import debugUtils.debugUtils as dbgUtil
 
 #Checks if tflite runtime is installed
@@ -275,8 +274,8 @@ class UltrafastLaneDetector():
 				# gets center points between left and right
 				for i in range(4, length - 4, 1):
 					# gets center point of lane 1 and lane 2 point "i"
-					center_point1 = average_points(converted_lane_points_mat[1][i], converted_lane_points_mat[2][i])
-					center_point2 = average_points(converted_lane_points_mat[1][i + 1], converted_lane_points_mat[2][i + 1])
+					center_point1 = utils.average_points(converted_lane_points_mat[1][i], converted_lane_points_mat[2][i])
+					center_point2 = utils.average_points(converted_lane_points_mat[1][i + 1], converted_lane_points_mat[2][i + 1])
 
 					# points need to be integers before given to cv2.line
 					center_x1 = int(center_point1[0])
@@ -289,8 +288,10 @@ class UltrafastLaneDetector():
 					cv2.line(img=visualization_img, pt1=point1, pt2=point2, color=lane_colors[lane_num], thickness=8)
 					x_arr.append(center_x1)
 
+				x_arr = utils.shorten_array(x_arr, 3)		#shortens array. array is passed in and every "n" value is kept
 				if debug:
 					# graph (looking at smoothed data)
+					print("x array: ", x_arr)
 					df = pd.DataFrame(dict(x=x_arr))
 					dbgUtil.plotSmoothData(df, x_arr, len(x_arr))
 					# time.sleep(0.05)
