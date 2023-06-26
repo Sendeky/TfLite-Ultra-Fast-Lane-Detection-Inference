@@ -30,7 +30,8 @@ if __name__ == "__main__":
 		if ret:	
 
 			# Detect the lanes
-			output_img = lane_detector.detect_lanes(frame)
+			# use debug if you want to see pyplot of smoothed center points
+			output_img = lane_detector.detect_lanes(frame, debug=False)
 
 			cv2.imshow("Detected lanes", output_img)
 

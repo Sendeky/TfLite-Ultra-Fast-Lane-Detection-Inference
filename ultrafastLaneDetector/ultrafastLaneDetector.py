@@ -24,10 +24,7 @@ All this happens when "detect_lanes()" is called from instance of UltraFastLaneD
 
 
 
-
-
-
-
+import pandas as pd
 import time
 import cv2
 import scipy.special
@@ -35,8 +32,8 @@ from enum import Enum
 import numpy as np
 
 #utils
-# from utils import average_points
 from .utils import average_points
+import debugUtils.debugUtils as dbgUtil
 
 #Checks if tflite runtime is installed
 try:
@@ -113,7 +110,7 @@ class UltrafastLaneDetector():
 		self.getModel_input_details()
 		self.getModel_output_details()
 		
-	def detect_lanes(self, image, draw_points=True):
+	def detect_lanes(self, image, debug, draw_points=True):
 		input_tensor = self.prepare_input(image)
 
 		# Perform inference on the image
@@ -122,8 +119,9 @@ class UltrafastLaneDetector():
 		# Process output data
 		self.lanes_points, self.lanes_detected = self.process_output(output, self.cfg)
 
+		print("debug: ", debug)
 		# Draw depth image
-		visualization_img = self.draw_lanes(image, self.lanes_points, self.lanes_detected, self.cfg, draw_points)
+		visualization_img = self.draw_lanes(image, self.lanes_points, self.lanes_detected, self.cfg, debug, draw_points)
 
 		return visualization_img
 
@@ -214,7 +212,7 @@ class UltrafastLaneDetector():
 
 
 	@staticmethod
-	def draw_lanes(input_img, lane_points_mat, lanes_detected, cfg, draw_points=True):
+	def draw_lanes(input_img, lane_points_mat, lanes_detected, cfg, debug, draw_points=True):
 		# Write the detected line points in the image
 		visualization_img = cv2.resize(input_img, (cfg.img_w, cfg.img_h), interpolation = cv2.INTER_AREA)
 
@@ -262,7 +260,7 @@ class UltrafastLaneDetector():
 					# cv2.drawContours(image=visualization_img, contours=[lane_points], contourIdx=-1, color=lane_colors[lane_num], thickness=3)
 			# print("lane_points_mat: ", lane_points_mat)
 			converted_lane_points_mat = np.array(lane_points_mat).tolist()
-			print("converted lane_points_mat: ", converted_lane_points_mat)
+			# print("converted lane_points_mat: ", converted_lane_points_mat)
 
 			# checks for 2 center lanes in lane_points matrix
 			if converted_lane_points_mat[1] and [2]:
@@ -272,10 +270,10 @@ class UltrafastLaneDetector():
 
 				length = min(len(converted_lane_points_mat[1]), len(converted_lane_points_mat[2]))
 				print("min length lanes: ", length)
-
+				x_arr = []
 
 				# gets center points between left and right
-				for i in range(0, length - 1, 1):
+				for i in range(4, length - 4, 1):
 					# gets center point of lane 1 and lane 2 point "i"
 					center_point1 = average_points(converted_lane_points_mat[1][i], converted_lane_points_mat[2][i])
 					center_point2 = average_points(converted_lane_points_mat[1][i + 1], converted_lane_points_mat[2][i + 1])
@@ -289,8 +287,15 @@ class UltrafastLaneDetector():
 					point1 = [center_x1, center_y1]
 					point2 = [center_x2, center_y2]
 					cv2.line(img=visualization_img, pt1=point1, pt2=point2, color=lane_colors[lane_num], thickness=8)
-					# center_points.append([center_x, center_y])
-				
+					x_arr.append(center_x1)
+
+				if debug:
+					# graph (looking at smoothed data)
+					df = pd.DataFrame(dict(x=x_arr))
+					dbgUtil.plotSmoothData(df, x_arr, len(x_arr))
+					# time.sleep(0.05)
+
+
 				# print("center points: ", center_points)
 				# center_points = np.array(center_points)
 				# cv2.drawContours(visualization_img, [center_points], -1, lane_colors[lane_num], 3)
