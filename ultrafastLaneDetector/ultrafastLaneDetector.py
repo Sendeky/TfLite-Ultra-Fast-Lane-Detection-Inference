@@ -240,7 +240,7 @@ class UltrafastLaneDetector():
 						print("lane points len: ", len(lane_points))
 
 						# draw dashed lines for inner lanes
-						for i in range(0, len(lane_points) - 1, 2):
+						for i in range(0, len(lane_points) - 1, 1):
 							print("i range: ", i)
 							print(f"{i} lane_points: ", lane_points[i])
 							print(f"{i + 1} lane_points: ", lane_points[i + 1])
@@ -273,21 +273,28 @@ class UltrafastLaneDetector():
 				length = min(len(converted_lane_points_mat[1]), len(converted_lane_points_mat[2]))
 				print("min length lanes: ", length)
 
-				center_points = []
-				# gets center points between left and right
-				for i in range(0, length - 1, 2):
-					center_point = average_points(converted_lane_points_mat[1][i], converted_lane_points_mat[2][i])
-					print(f"center line{i}", center_point)
-					center_x = int(center_point[0])
-					center_y = int(center_point[1])
-					cv2.circle(img=visualization_img, center=(center_x, center_y), radius=3, color=lane_colors[lane_num],thickness=-1)
-					center_points.append([center_x, center_y])
-				
-				print("center points: ", center_points)
-				center_points = np.array(center_points)
-				cv2.drawContours(visualization_img, [center_points], -1, lane_colors[lane_num], 3)
-				# cv2.drawContours(image=visualization_img, contours=[lane_points], contourIdx=-1, color=lane_colors[lane_num], thickness=3)
 
+				# gets center points between left and right
+				for i in range(0, length - 1, 1):
+					# gets center point of lane 1 and lane 2 point "i"
+					center_point1 = average_points(converted_lane_points_mat[1][i], converted_lane_points_mat[2][i])
+					center_point2 = average_points(converted_lane_points_mat[1][i + 1], converted_lane_points_mat[2][i + 1])
+
+					# points need to be integers before given to cv2.line
+					center_x1 = int(center_point1[0])
+					center_y1 = int(center_point1[1])
+					center_x2 = int(center_point2[0])
+					center_y2 = int(center_point2[1])
+
+					point1 = [center_x1, center_y1]
+					point2 = [center_x2, center_y2]
+					cv2.line(img=visualization_img, pt1=point1, pt2=point2, color=lane_colors[lane_num], thickness=8)
+					# center_points.append([center_x, center_y])
+				
+				# print("center points: ", center_points)
+				# center_points = np.array(center_points)
+				# cv2.drawContours(visualization_img, [center_points], -1, lane_colors[lane_num], 3)
+				# cv2.drawContours(image=visualization_img, contours=[lane_points], contourIdx=-1, color=lane_colors[lane_num], thickness=3)
 
 
 		return visualization_img
