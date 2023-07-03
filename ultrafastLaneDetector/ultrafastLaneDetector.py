@@ -118,7 +118,6 @@ class UltrafastLaneDetector():
 		# Process output data
 		self.lanes_points, self.lanes_detected = self.process_output(output, self.cfg)
 
-		print("debug: ", debug)
 		# Draw depth image
 		visualization_img = self.draw_lanes(image, self.lanes_points, self.lanes_detected, self.cfg, debug, draw_points)
 
@@ -233,15 +232,21 @@ class UltrafastLaneDetector():
 					
 					if lane_num == 1 or lane_num == 2:
 						# draw continous lines for inner lanes
-						print("lane points: ", lane_points)
-						print("lane points len: ", len(lane_points))
+
+						# debug will print more info
+						if debug:
+							print("lane points: ", lane_points)
+							print("lane points len: ", len(lane_points))
 
 						# draw dashed lines for inner lanes
 						for i in range(0, len(lane_points) - 1, 1):
-							print("i range: ", i)
-							print(f"{i} lane_points: ", lane_points[i])
-							print(f"{i + 1} lane_points: ", lane_points[i + 1])
-							print("avg points: ")
+
+							# debug will print more info
+							if debug:
+								print("i range: ", i)
+								print(f"{i} lane_points: ", lane_points[i])
+								print(f"{i + 1} lane_points: ", lane_points[i + 1])
+
 							point1 = lane_points[i]
 							point2 = lane_points[i + 1]
 							cv2.line(img=visualization_img, pt1=point1, pt2=point2, color=lane_colors[lane_num], thickness=3)
@@ -263,13 +268,16 @@ class UltrafastLaneDetector():
 
 			# checks for 2 center lanes in lane_points matrix
 			if converted_lane_points_mat[1] and [2]:
-				print("Center lanes exist")
-				print("right lane: ", converted_lane_points_mat[1])
-				print("left lane: ", converted_lane_points_mat[2])
-
-				length = min(len(converted_lane_points_mat[1]), len(converted_lane_points_mat[2]))
-				print("min length lanes: ", length)
+				# variables for 
 				x_arr = []
+				center_points_arr = []
+				length = min(len(converted_lane_points_mat[1]), len(converted_lane_points_mat[2]))
+				# debug will print more info
+				if debug:
+					print("Center lanes exist")
+					print("right lane: ", converted_lane_points_mat[1])
+					print("left lane: ", converted_lane_points_mat[2])
+					print("min length lanes: ", length)
 
 				# gets center points between left and right
 				for i in range(4, length - 4, 1):
@@ -287,14 +295,19 @@ class UltrafastLaneDetector():
 					point2 = [center_x2, center_y2]
 					cv2.line(img=visualization_img, pt1=point1, pt2=point2, color=lane_colors[lane_num], thickness=8)
 					x_arr.append(center_x1)
+					center_points_arr.append([center_x1, center_y1])
 
-				x_arr = utils.shorten_array(x_arr, 3)		#shortens array. array is passed in and every "n" value is kept
 				if debug:
+					#shortens array. array is passed in and every "n" value is kept
+					x_arr = utils.shorten_array(x_arr, 3)
 					# graph (looking at smoothed data)
 					print("x array: ", x_arr)
 					df = pd.DataFrame(dict(x=x_arr))
 					dbgUtil.plotSmoothData(df, x_arr, len(x_arr))
 					# time.sleep(0.05)
+					turn_radius = utils.calculate_turn_radius(center_points_arr)
+					steering_angle = utils.calculate_steering_angle(turn_radius)
+					print("steering angle: ", steering_angle)
 
 
 				# print("center points: ", center_points)
