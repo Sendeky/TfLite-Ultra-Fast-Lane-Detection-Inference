@@ -116,12 +116,12 @@ class UltrafastLaneDetector():
 		output = self.inference(input_tensor)
 
 		# Process output data
-		self.lanes_points, self.lanes_detected = self.process_output(output, self.cfg)
+		self.lanes_points, self.lanes_detected, self.lanes_array = self.process_output(output, self.cfg)
 
 		# Draw depth image
 		visualization_img = self.draw_lanes(image, self.lanes_points, self.lanes_detected, self.cfg, debug, draw_points)
 
-		return visualization_img
+		return visualization_img, self.lanes_array
 
 	def prepare_input(self, image):
 		img = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
@@ -203,9 +203,10 @@ class UltrafastLaneDetector():
 				lanes_detected.append(False)
 
 			lane_points_mat.append(lane_points)
-			# print("Lane points mat: ", lane_points_mat)
-			# print("Lane points mat type: ", type(lane_points_mat))
-		return np.array(lane_points_mat), np.array(lanes_detected)
+			print("Lane points mat: ", lane_points_mat)			# we're going to use this for vectorVisualizations.py
+			print("Lane points mat type: ", np.array(lane_points_mat))
+		return np.array(lane_points_mat), np.array(lanes_detected), lane_points_mat					# if you get error "The requested array has an inhomogeneous shape after 1 dimensions."
+																					# try a different numpy version (tested and works on 1.23.5 but not 1.25.0)
 	
 
 
