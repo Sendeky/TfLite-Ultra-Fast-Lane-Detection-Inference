@@ -1,6 +1,6 @@
 tensorflow
 matplotlib
-panas
+pandas
 opencv-python
 scipy
 numpy==1.23.5   # this version works fine, 1.25.0 has "The requested array has an inhomogeneous shape after 1 dimensions." error
